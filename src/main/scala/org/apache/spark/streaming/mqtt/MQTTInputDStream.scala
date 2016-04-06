@@ -17,6 +17,7 @@
 
 package org.apache.spark.streaming.mqtt
 
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
 import org.eclipse.paho.client.mqttv3.MqttClient
@@ -41,13 +42,16 @@ class MQTTInputDStream(
     _ssc: StreamingContext,
     brokerUrl: String,
     topic: String,
+    clientID: String,
+    userName: String,
+    password: String,
     storageLevel: StorageLevel
   ) extends ReceiverInputDStream[String](_ssc) {
 
   private[streaming] override def name: String = s"MQTT stream [$id]"
 
   def getReceiver(): Receiver[String] = {
-    new MQTTReceiver(brokerUrl, topic, storageLevel)
+    new MQTTReceiver(brokerUrl, topic, clientID, userName, password, storageLevel)
   }
 }
 
@@ -55,6 +59,9 @@ private[streaming]
 class MQTTReceiver(
     brokerUrl: String,
     topic: String,
+    clientID: String,
+    userName: String,
+    password: String,
     storageLevel: StorageLevel
   ) extends Receiver[String](storageLevel) {
 
@@ -66,9 +73,21 @@ class MQTTReceiver(
 
     // Set up persistence for messages
     val persistence = new MemoryPersistence()
+    var clientId = clientID
+    if(clientId == null) {
+      clientId = MqttClient.generateClientId()
+    }
 
     // Initializing Mqtt Client specifying brokerUrl, clientID and MqttClientPersistance
-    val client = new MqttClient(brokerUrl, MqttClient.generateClientId(), persistence)
+    val client = new MqttClient(brokerUrl, clientId, persistence)
+
+    val connectOptions = new MqttConnectOptions()
+    if(userName != null && password != null) {
+      // Create a secure connection
+      connectOptions.setUserName(userName)
+      connectOptions.setPassword(password.toCharArray())
+      connectOptions.setCleanSession(false)
+    }
 
     // Callback automatically triggers as and when new message arrives on specified topic
     val callback = new MqttCallback() {
@@ -91,7 +110,7 @@ class MQTTReceiver(
     client.setCallback(callback)
 
     // Connect to MqttBroker
-    client.connect()
+    client.connect(connectOptions)
 
     // Subscribe to Mqtt topic
     client.subscribe(topic)

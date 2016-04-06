@@ -30,15 +30,51 @@ object MQTTUtils {
    * @param ssc           StreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
+   */
+  def createStream(
+      ssc: StreamingContext,
+      brokerUrl: String,
+      topic: String
+    ): ReceiverInputDStream[String] = {
+    createStream(ssc, brokerUrl, topic, null, null, null, StorageLevel.MEMORY_AND_DISK_SER_2)
+  }
+
+  /**
+   * Create an input stream that receives messages pushed by a MQTT publisher.
+   * @param ssc           StreamingContext object
+   * @param brokerUrl     Url of remote MQTT publisher
+   * @param topic         Topic name to subscribe to
    * @param storageLevel  RDD storage level. Defaults to StorageLevel.MEMORY_AND_DISK_SER_2.
    */
   def createStream(
       ssc: StreamingContext,
       brokerUrl: String,
       topic: String,
+      storageLevel: StorageLevel
+    ): ReceiverInputDStream[String] = {
+    createStream(ssc, brokerUrl, topic, null, null, null, storageLevel)
+  }
+
+  /**
+   * Create an input stream that receives messages pushed by a MQTT publisher.
+   * @param ssc           StreamingContext object
+   * @param brokerUrl     Url of remote MQTT publisher
+   * @param topic         Topic name to subscribe to
+   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param userName      MQTT Username required for SSL communication
+   * @param password      MQTT Password required for SSL communication
+   * @param storageLevel  RDD storage level. Defaults to StorageLevel.MEMORY_AND_DISK_SER_2.
+   */
+  def createStream(
+      ssc: StreamingContext,
+      brokerUrl: String,
+      topic: String,
+      clientID: String,
+      userName: String,
+      password: String,
       storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER_2
     ): ReceiverInputDStream[String] = {
-    new MQTTInputDStream(ssc, brokerUrl, topic, storageLevel)
+    new MQTTInputDStream(ssc, brokerUrl, topic, clientID, userName, password, storageLevel)
   }
 
   /**
@@ -59,7 +95,51 @@ object MQTTUtils {
 
   /**
    * Create an input stream that receives messages pushed by a MQTT publisher.
-   * @param jssc      JavaStreamingContext object
+   * @param jssc          JavaStreamingContext object
+   * @param brokerUrl     Url of remote MQTT publisher
+   * @param topic         Topic name to subscribe to
+   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param userName      MQTT Username required for SSL communication
+   * @param password      MQTT Password required for SSL communication
+   */
+  def createStream(
+      jssc: JavaStreamingContext,
+      brokerUrl: String,
+      topic: String,
+      clientID: String,
+      userName: String,
+      password: String
+    ): JavaReceiverInputDStream[String] = {
+    implicitly[ClassTag[AnyRef]].asInstanceOf[ClassTag[String]]
+    createStream(jssc.ssc, brokerUrl, topic, clientID, userName, password)
+  }
+
+  /**
+   * Create an input stream that receives messages pushed by a MQTT publisher.
+   * @param jssc          JavaStreamingContext object
+   * @param brokerUrl     Url of remote MQTT publisher
+   * @param topic         Topic name to subscribe to
+   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param userName      MQTT Username required for SSL communication
+   * @param password      MQTT Password required for SSL communication
+   * @param storageLevel  RDD storage level. Defaults to StorageLevel.MEMORY_AND_DISK_SER_2.
+   */
+  def createStream(
+      jssc: JavaStreamingContext,
+      brokerUrl: String,
+      topic: String,
+      clientID: String,
+      userName: String,
+      password: String,
+      storageLevel: StorageLevel
+    ): JavaReceiverInputDStream[String] = {
+    implicitly[ClassTag[AnyRef]].asInstanceOf[ClassTag[String]]
+    createStream(jssc.ssc, brokerUrl, topic, clientID, userName, password, storageLevel)
+  }
+
+  /**
+   * Create an input stream that receives messages pushed by a MQTT publisher.
+   * @param jssc          JavaStreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
    * @param storageLevel  RDD storage level.
@@ -85,8 +165,28 @@ private[mqtt] class MQTTUtilsPythonHelper {
       jssc: JavaStreamingContext,
       brokerUrl: String,
       topic: String,
+      clientID: String,
+      userName: String,
+      password: String,
       storageLevel: StorageLevel
     ): JavaDStream[String] = {
-    MQTTUtils.createStream(jssc, brokerUrl, topic, storageLevel)
+    MQTTUtils.createStream(jssc, brokerUrl, topic, clientID, userName, password, storageLevel)
+  }
+
+  def createStream(
+      jssc: JavaStreamingContext,
+      brokerUrl: String,
+      topic: String,
+      storageLevel: StorageLevel
+    ): JavaDStream[String] = {
+    MQTTUtils.createStream(jssc, brokerUrl, topic, null, null, null, storageLevel)
+  }
+
+  def createStream(
+      jssc: JavaStreamingContext,
+      brokerUrl: String,
+      topic: String
+    ): JavaDStream[String] = {
+    MQTTUtils.createStream(jssc, brokerUrl, topic)
   }
 }
