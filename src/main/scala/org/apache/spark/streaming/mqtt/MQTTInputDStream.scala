@@ -17,6 +17,8 @@
 
 package org.apache.spark.streaming.mqtt
 
+import javax.net.ssl.SSLContext
+
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken
 import org.eclipse.paho.client.mqttv3.MqttCallback
@@ -43,6 +45,7 @@ class MQTTInputDStream(
     brokerUrl: String,
     topic: String,
     clientID: String,
+    cleanSession: Boolean,
     userName: String,
     password: String,
     storageLevel: StorageLevel
@@ -51,7 +54,7 @@ class MQTTInputDStream(
   private[streaming] override def name: String = s"MQTT stream [$id]"
 
   def getReceiver(): Receiver[String] = {
-    new MQTTReceiver(brokerUrl, topic, clientID, userName, password, storageLevel)
+    new MQTTReceiver(brokerUrl, topic, clientID, cleanSession, userName, password, storageLevel)
   }
 }
 
@@ -60,33 +63,55 @@ class MQTTReceiver(
     brokerUrl: String,
     topic: String,
     clientID: String,
+    cleanSession: Boolean,
     userName: String,
     password: String,
     storageLevel: StorageLevel
   ) extends Receiver[String](storageLevel) {
 
-  def onStop() {
+  // Connection to MqttBroker
+  var client: MqttClient = null
 
+  def onStop() {
+    if (client != null) {
+      client.disconnect()
+      client = null
+    }
   }
 
   def onStart() {
 
     // Set up persistence for messages
     val persistence = new MemoryPersistence()
+
+    // AutoGenerate ClientID if not specified
     var clientId = clientID
     if(clientId == null) {
       clientId = MqttClient.generateClientId()
     }
 
     // Initializing Mqtt Client specifying brokerUrl, clientID and MqttClientPersistance
-    val client = new MqttClient(brokerUrl, clientId, persistence)
+    client = new MqttClient(brokerUrl, clientId, persistence)
 
     val connectOptions = new MqttConnectOptions()
+
+    // Should Client/Broker remember state across restarts and reconnects
+    if (cleanSession) {
+      connectOptions.setCleanSession(true)
+    } else {
+      connectOptions.setCleanSession(false)
+    }
+
+    // Create a secure connection
+    if (brokerUrl.startsWith("ssl://")) {
+      val sslContext = SSLContext.getInstance("TLSv1.2")
+      sslContext.init(null, null, null)
+      connectOptions.setSocketFactory(sslContext.getSocketFactory())
+    }
+
     if(userName != null && password != null) {
-      // Create a secure connection
       connectOptions.setUserName(userName)
       connectOptions.setPassword(password.toCharArray())
-      connectOptions.setCleanSession(false)
     }
 
     // Callback automatically triggers as and when new message arrives on specified topic
