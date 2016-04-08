@@ -60,7 +60,7 @@ object MQTTUtils {
    * @param ssc           StreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
-   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param clientID      MQTT ClientID that identifies this connection uniquely
    * @param cleanSession  MQTT should remember state across restarts and reconnects
    */
   def createStream(
@@ -78,7 +78,7 @@ object MQTTUtils {
    * @param ssc           StreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
-   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param clientID      MQTT ClientID that identifies this connection uniquely
    * @param cleanSession  MQTT should remember state across restarts and reconnects
    * @param userName      MQTT Username required for SSL communication
    * @param password      MQTT Password required for SSL communication
@@ -94,7 +94,8 @@ object MQTTUtils {
       password: String,
       storageLevel: StorageLevel = StorageLevel.MEMORY_AND_DISK_SER_2
     ): ReceiverInputDStream[String] = {
-    new MQTTInputDStream(ssc, brokerUrl, topic, clientID, cleanSession, userName, password, storageLevel)
+    new MQTTInputDStream(ssc, brokerUrl, topic, clientID, cleanSession, userName, password,
+      storageLevel)
   }
 
   /**
@@ -118,7 +119,7 @@ object MQTTUtils {
    * @param jssc          JavaStreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
-   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param clientID      MQTT ClientID that identifies this connection uniquely
    * @param cleanSession  MQTT should remember state across restarts and reconnects
    * @param userName      MQTT Username required for SSL communication
    * @param password      MQTT Password required for SSL communication
@@ -141,7 +142,7 @@ object MQTTUtils {
    * @param jssc          JavaStreamingContext object
    * @param brokerUrl     Url of remote MQTT publisher
    * @param topic         Topic name to subscribe to
-   * @param clientID      MQTT ClientID that identifies this connection uniquely 
+   * @param clientID      MQTT ClientID that identifies this connection uniquely
    * @param cleanSession  MQTT should remember state across restarts and reconnects
    * @param userName      MQTT Username required for SSL communication
    * @param password      MQTT Password required for SSL communication
@@ -158,7 +159,8 @@ object MQTTUtils {
       storageLevel: StorageLevel
     ): JavaReceiverInputDStream[String] = {
     implicitly[ClassTag[AnyRef]].asInstanceOf[ClassTag[String]]
-    createStream(jssc.ssc, brokerUrl, topic, clientID, cleanSession, userName, password, storageLevel)
+    createStream(jssc.ssc, brokerUrl, topic, clientID, cleanSession, userName, password,
+      storageLevel)
   }
 
   /**
@@ -195,7 +197,8 @@ private[mqtt] class MQTTUtilsPythonHelper {
       password: String,
       storageLevel: StorageLevel
     ): JavaDStream[String] = {
-    MQTTUtils.createStream(jssc, brokerUrl, topic, clientID, cleanSession, userName, password, storageLevel)
+    MQTTUtils.createStream(jssc, brokerUrl, topic, clientID, cleanSession, userName, password,
+      storageLevel)
   }
 
   def createStream(
